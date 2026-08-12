@@ -1,0 +1,50 @@
+[package]
+name = "ppanggolin"
+kind = "tool"
+version = "2.3.1"
+release = 1
+license = "Apache-2.0"
+main = "src/main.taf"
+
+[repository]
+url = "https://github.com/taffish/ppanggolin"
+
+[command]
+name = "taf-ppanggolin"
+
+[runtime]
+pipe = true
+command_mode = true
+
+[container]
+image = "ghcr.io/taffish/ppanggolin:2.3.1-r1"
+dockerfile = "docker/Dockerfile"
+build_platforms = "linux/amd64,linux/arm64"
+
+[meta]
+domain = "bio"
+categories = ["pangenomics", "comparative-genomics", "genome-annotation", "visualization"]
+keywords = ["PPanGGOLiN", "bacterial pangenome", "partitioned pangenome graph", "RGP", "panRGP", "panModule", "MMseqs2", "MAFFT", "Infernal", "Aragorn", "graph-tool", "Plotly", "Bokeh"]
+description = "PPanGGOLiN 2.3.1 for prokaryotic pangenome construction, partitioning, RGP/module analysis, projection, export, and interactive HTML visualization."
+
+[upstream]
+name = "PPanGGOLiN"
+type = "github"
+repo = "labgem/PPanGGOLiN"
+homepage = "https://labgem.genoscope.cns.fr/2023/04/27/ppanggolin/"
+manual = "https://ppanggolin.readthedocs.io/en/latest/"
+release_url = "https://github.com/labgem/PPanGGOLiN/releases/tag/2.3.1"
+downloads = "https://codeload.github.com/labgem/PPanGGOLiN/tar.gz/refs/tags/2.3.1"
+version = "2.3.1"
+commit = "5492c4c6572e6166b2a821c7941aa6a0068ece37"
+license = "CeCILL-2.1"
+citation = "Gautreau G et al. PPanGGOLiN: Depicting microbial diversity via a partitioned pangenome graph. PLOS Computational Biology 16(3):e1007732 (2020)."
+doi = "10.1371/journal.pcbi.1007732"
+pmid = "32191703"
+watch = "tags"
+
+[smoke]
+backend = "docker"
+timeout = 1200
+exist = ["ppanggolin", "ppanggolin-smoke", "ppanggolin-smoke-fixtures.py", "python", "mmseqs", "mafft", "aragorn", "cmscan", "cmpress", "bash", "sh", "grep", "sha256sum"]
+test = ["ppanggolin-smoke identity", "ppanggolin-smoke interfaces", "ppanggolin-smoke annotation", "ppanggolin-smoke workflow", "ppanggolin-smoke artifacts", "ppanggolin-smoke all"]
