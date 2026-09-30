@@ -1,0 +1,6 @@
+{
+  "artifact": "taf-ppanggolin-v2.3.2-r1",
+  "schema": "taffish.build/v1",
+  "source_sha256": "12704699d254d79f8a64ad153d7c8357337ee04fc5bf8670b9dc165a82afe6f5",
+  "wrapper_sha256": "8f3b225d0df181675264693de61c92b279cc54e99658a7e8a438858da086cc6b"
+}

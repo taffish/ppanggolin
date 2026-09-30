@@ -1,0 +1,6 @@
+.git
+.github
+target
+release
+__pycache__
+*.pyc

@@ -4,9 +4,9 @@ ARG MICROMAMBA_IMAGE=mambaorg/micromamba:1.5.10-bookworm-slim@sha256:e3797091302
 
 FROM ${MICROMAMBA_IMAGE} AS builder
 
-ARG PPANGGOLIN_VERSION=2.3.1
-ARG PPANGGOLIN_COMMIT=5492c4c6572e6166b2a821c7941aa6a0068ece37
-ARG PPANGGOLIN_SOURCE_SHA256=e23ae74c78b52875d97dd0b894e7080f198f03b8762a30ae5e2e8ec7effcca29
+ARG PPANGGOLIN_VERSION=2.3.2
+ARG PPANGGOLIN_COMMIT=8804f27a942417e462085ddf2a7bfbf4c1b0a51f
+ARG PPANGGOLIN_SOURCE_SHA256=52b6359322a85c2765a1524d8087909ebd936fe7211ce67260fd6e61a00ba264
 ARG TARGETARCH
 
 USER root
@@ -27,6 +27,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 USER mambauser
 WORKDIR /tmp/build
+
+COPY docker/python-wheels.txt /opt/ppanggolin/build-support/
 
 ENV MAMBA_DOWNLOAD_THREADS=1 \
     MAMBA_EXTRACT_THREADS=1 \
@@ -56,7 +58,7 @@ RUN set -eux; \
           "scipy=1.16.3" \
           "plotly=5.24.1" \
           "gmpy2=2.2.1" \
-          "bokeh=3.8.1" \
+          "bokeh=3.3.4" \
           "graph-tool-base=2.98" \
           "mmseqs2=15.6f452" \
           "infernal=1.1.5" \
@@ -64,7 +66,7 @@ RUN set -eux; \
           "mafft=7.525" \
           "cython=3.2.9" \
           pip \
-          setuptools; then \
+          setuptools setuptools-scm; then \
         break; \
       fi; \
       test "${attempt}" != 3; \
@@ -73,8 +75,20 @@ RUN set -eux; \
       sleep 10; \
     done
 
+# Preserve the original notices shipped in the matching FreeType output.
+RUN micromamba install -y -n base -c conda-forge --freeze-installed "freetype=2.14.3"
+
+COPY docker/conda-licenses.py /opt/ppanggolin/build-support/
+
 RUN set -eux; \
+    curl --retry 5 --retry-all-errors -fsSL https://files.pythonhosted.org/packages/eb/89/aae10bda1b098ffb748303a799c32a80d3f9b08234a0d7cea1fc52cde2c4/pyaragorn-0.3.0.tar.gz -o pyaragorn-notices.tar.gz; \
+    curl --retry 5 --retry-all-errors -fsSL https://mafft.cbrc.jp/alignment/software/mafft-7.525-with-extensions-src.tgz -o mafft-notices.tar.gz; \
+    /opt/conda/bin/python -m pip install --no-cache-dir --only-binary=:all: --no-deps --require-hashes -r /opt/ppanggolin/build-support/python-wheels.txt; \
     /opt/conda/bin/python -m pip install --no-cache-dir --no-deps --no-build-isolation ./source; \
+    /opt/conda/bin/python -m pip check; \
+    /opt/conda/bin/python -m pip list --format=json > /opt/ppanggolin/share/provenance/python-packages.json; \
+    /opt/conda/bin/python /opt/ppanggolin/build-support/conda-licenses.py collect; \
+    (cd source/ppanggolin/annotate/rRNA_DB && sha256sum * | sort -k2) > /opt/ppanggolin/share/provenance/rrna-models.sha256; \
     micromamba list -n base --json > /opt/ppanggolin/share/provenance/conda-packages.json; \
     { \
       printf 'upstream_repo=https://github.com/labgem/PPanGGOLiN\n'; \
@@ -134,7 +148,7 @@ RUN set -eux; \
 
 FROM ${MICROMAMBA_IMAGE}
 
-ARG PPANGGOLIN_VERSION=2.3.1
+ARG PPANGGOLIN_VERSION=2.3.2
 
 LABEL org.opencontainers.image.title="TAFFISH PPanGGOLiN" \
       org.opencontainers.image.description="PPanGGOLiN pangenome analysis with its complete upstream runtime dependency set" \
@@ -163,7 +177,7 @@ RUN set -eux; \
     ln -s /opt/ppanggolin/share/testdata/ppanggolin-smoke.sh /usr/local/bin/ppanggolin-smoke; \
     ln -s /opt/ppanggolin/share/testdata/ppanggolin-smoke-fixtures.py /usr/local/bin/ppanggolin-smoke-fixtures.py; \
     ppanggolin --version 2>&1 | grep -Fx "ppanggolin ${PPANGGOLIN_VERSION}" >/dev/null; \
-    python -c 'from importlib.metadata import version; import graph_tool, nem_stats, ppanggolin; assert version("PPanGGOLiN") == "2.3.1"; assert graph_tool.__version__.split()[0] == "2.98"'; \
+    python -c 'from importlib.metadata import version; import graph_tool, nem_stats, ppanggolin, pyaragorn, gb_io, pyroaring; assert version("PPanGGOLiN") == "2.3.2"; assert graph_tool.__version__.split()[0] == "2.98"'; \
     command -v mmseqs >/dev/null; \
     command -v mafft >/dev/null; \
     command -v aragorn >/dev/null; \

@@ -80,6 +80,23 @@ def write_genome(root: Path, index: int) -> tuple[Path, Path]:
         for offset in range(0, len(sequence), 70):
             handle.write(sequence[offset : offset + 70] + "\n")
 
+    with (root / f"{genome}.gbff").open("w", encoding="utf-8") as handle:
+        handle.write(f"LOCUS       {contig:<20} {len(sequence):>7} bp    DNA     linear   BCT 01-JAN-2020\n")
+        handle.write(f"DEFINITION  Synthetic TAFFISH execution fixture.\nACCESSION   {contig}\nVERSION     {contig}\n")
+        handle.write(f"FEATURES             Location/Qualifiers\n     source          1..{len(sequence)}\n")
+        handle.write('                     /organism="synthetic construct"\n')
+        for number, (start, end, family, protein) in enumerate(features, 1):
+            handle.write(f"     CDS             {start}..{end}\n")
+            handle.write(f'                     /locus_tag="{genome}_gene_{number:02d}"\n')
+            handle.write(f'                     /product="{family}"\n')
+            handle.write(f'                     /translation="{protein}"\n')
+            handle.write('                     /transl_table=11\n')
+        handle.write("ORIGIN\n")
+        for offset in range(0, len(sequence), 60):
+            segment = sequence[offset:offset+60].lower()
+            handle.write(f"{offset+1:>9} " + " ".join(segment[i:i+10] for i in range(0, len(segment), 10)) + "\n")
+        handle.write("//\n")
+
     return gff_path, fasta_path
 
 
@@ -100,6 +117,9 @@ def main() -> None:
 
     (root / "annotations.tsv").write_text("".join(annotation_rows), encoding="utf-8")
     (root / "fastas.tsv").write_text("".join(fasta_rows), encoding="utf-8")
+    (root / "genbank.tsv").write_text("".join(
+        f"genome_{i:02d}\t{root / f'genome_{i:02d}.gbff'}\n" for i in range(1, 6)
+    ), encoding="utf-8")
 
     _dna, query_protein = coding_sequence("persistent_01")
     (root / "query.faa").write_text(
